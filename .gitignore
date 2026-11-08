@@ -1,0 +1,30 @@
+# 秘密情報（値が空の設定例だけ共有する）
+.env
+.env.*
+.dev.vars.*
+!.dev.vars.example
+!.env.example
+*.pem
+*.key
+*.sqlite
+*.db
+
+# 動画ファイル
+*.mp4
+*.mov
+*.webm
+*.wav
+*.mp3
+*.m4a
+
+# OS
+.DS_Store
+.dev.vars
+node_modules/
+.wrangler/
+
+# React 版のビルド結果（src/web で npm run build すると出る）
+src/public/app/
+
+# 開発のデータ置き場（既定はリポジトリの外。中に置いたときの保険）
+.matta-state/

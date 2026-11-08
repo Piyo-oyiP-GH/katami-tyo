@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "matta-box",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "dev": { "port": 8791 },
+  // 期限切れの見本を消す。1 時間ごと。手元の wrangler dev では cron は動かないので、画面を開いたときにも動く
+  "triggers": { "crons": ["0 * * * *"] },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "matta-box",
+      // 配備するときに wrangler d1 create の結果で置き換える。ローカルではこの値のまま動く
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "matta-box-photos" }],
+  "queues": {
+    "producers": [
+      { "binding": "READ_QUEUE", "queue": "matta-read" },
+      { "binding": "PERSONS_QUEUE", "queue": "matta-persons" }
+    ],
+    "consumers": [
+      // 読み取り。写真ごとに独立なので並列でよい
+      { "queue": "matta-read", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 3, "max_concurrency": 4 },
+      // 人物の仮説。計画 3 章のとおり同時実行 1
+      { "queue": "matta-persons", "max_batch_size": 1, "max_batch_timeout": 1, "max_retries": 3, "max_concurrency": 1 }
+    ]
+  }
+}

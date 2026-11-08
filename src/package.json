@@ -1,0 +1,23 @@
+{
+  "name": "matta-box",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "types": "wrangler types",
+    "db:migrate": "node scripts/dev.mjs migrate",
+    "dev": "node scripts/dev.mjs dev",
+    "e2e:photo": "node scripts/e2e-photo.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.6.0",
+    "hono": "4.13.16"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "playwright": "1.65.0",
+    "typescript": "7.0.2",
+    "wrangler": "4.158.0"
+  }
+}

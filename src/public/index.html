@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<script>
+  // 提出版の画面は React 版（/app/）。招待のリンク（#/join/…）もそのまま渡す。前の版は /?legacy で開ける
+  if (!/[?&]legacy/.test(location.search)) location.replace("/app/" + location.hash);
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#eef1f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14202c" media="(prefers-color-scheme: dark)">
+<title>待った箱</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app"></div>
+<dialog id="ask"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript>このページは JavaScript が要ります。</noscript>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

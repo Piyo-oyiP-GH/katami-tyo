@@ -1,0 +1,1544 @@
+/* YukariNote の画面。決まり：
+   - 文字は 3 段階だけ：28px（1.75rem）、18px（1.125rem）、16px（1rem）。16px 未満は使わない
+   - 角丸は 0（写真、節）、8px（ボタン）、円（待ったの印）の 3 種類だけ
+   - 箱の入れ子を作らない。まず余白で分ける
+   - 茜は待っただけ。3 つの状態は色と形（塗り、枠）と文字で分ける
+   - 動くのは操作への応答だけ。prefers-reduced-motion では止める */
+
+:root {
+  /* 案A 和紙の昼 */
+  --bg: #f6f0e4;
+  --sf: #fffbf3;
+  --tx: #2b2118;
+  --tx2: #5e5143;
+  --line: #e2d8c6;
+  --pri: #2f5d62;
+  --on-pri: #ffffff;
+  --keep: #1f5fa8;
+  --on-keep: #ffffff;
+  --unsure: #e0a526;
+  --on-unsure: #2b2118;
+  --drop: #4d5a66;
+  --akane: #c8321e;
+  --on-akane: #ffffff;
+  --cam: #1e1a17;
+  --cam-tx: #e8dfd0;
+  --r: 8px;
+  --gut: 1rem;
+  --fs-big: 1.75rem;
+  --fs-mid: 1.125rem;
+  --fs: 1rem;
+  --sans: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+  --serif: "BIZ UDPMincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  color-scheme: light;
+}
+
+/* 案C：OS が暗い設定のとき */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1a17;
+    --sf: #2a2420;
+    --tx: #f1e9dc;
+    --tx2: #bdb1a2;
+    --line: #3a332d;
+    --pri: #9cc3c7;
+    --on-pri: #1e1a17;
+    --keep: #7fb2e5;
+    --on-keep: #1e1a17;
+    --unsure: #e8b84a;
+    --on-unsure: #1e1a17;
+    --drop: #a9b4c2;
+    --akane: #ff8a70;
+    --on-akane: #1e1a17;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--tx);
+  font-family: var(--sans);
+  font-size: var(--fs);
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+}
+ul {
+  padding: 0;
+  list-style: none;
+}
+a {
+  color: inherit;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 3px solid var(--pri);
+  outline-offset: 2px;
+}
+
+.h-big {
+  font-size: var(--fs-big);
+  font-weight: 700;
+  line-height: 1.4;
+  font-feature-settings: "palt";
+}
+.h-mid {
+  font-size: var(--fs-mid);
+  font-weight: 700;
+  line-height: 1.5;
+}
+.note,
+.sub {
+  color: var(--tx2);
+  font-size: var(--fs);
+  line-height: 1.7;
+}
+.pad {
+  padding: 0 var(--gut);
+}
+
+/* ---- 画面の骨組み ---- */
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.page {
+  max-width: 40rem;
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: 2rem;
+}
+.with-tabs .page {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+.with-foot .page {
+  padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px));
+}
+.head {
+  padding: 1.25rem var(--gut) 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.sec {
+  padding: 1rem var(--gut);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.sec + .sec {
+  padding-top: 1.25rem;
+}
+.stack,
+.stack-tight {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+/* ---- ボタン（角丸 8px） ---- */
+.btn {
+  min-height: 3rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--r);
+  border: 2px solid var(--pri);
+  background: var(--sf);
+  color: var(--pri);
+  font-size: var(--fs-mid);
+  font-weight: 700;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--pri);
+  color: var(--on-pri);
+}
+.btn:disabled {
+  opacity: 0.6;
+}
+.wide {
+  width: 100%;
+}
+.text-btn {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  font-size: var(--fs-mid);
+  border: 0;
+  background: none;
+  color: var(--pri);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.icon-btn {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--r);
+  color: var(--pri);
+  font-weight: 700;
+  text-decoration: none;
+  flex: none;
+}
+.back {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--pri);
+  font-weight: 700;
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: var(--r);
+  background: var(--sf);
+  font-size: var(--fs-mid);
+}
+input:focus,
+textarea:focus {
+  border-color: var(--pri);
+  outline: none;
+}
+label {
+  font-weight: 700;
+}
+.note-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+/* ---- 入口 ---- */
+.entry {
+  padding: 3rem var(--gut) 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.entry .sec {
+  padding: 0;
+}
+.entry-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.fold {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+.fold summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: var(--fs-mid);
+  cursor: pointer;
+}
+.fold form {
+  padding: 0.5rem 0 0.5rem;
+}
+
+/* ---- つながり ---- */
+.thumbs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+.thumb-link {
+  flex: none;
+  width: 5.5rem;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.thumb {
+  width: 5.5rem;
+  height: 5.5rem;
+  object-fit: cover;
+  border-radius: var(--r);
+  display: block;
+  background: var(--sf);
+}
+.thumb-name {
+  font-size: var(--fs);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.chip {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--r);
+  border: 2px solid var(--pri);
+  background: var(--pri);
+  color: var(--on-pri);
+  font-weight: 700;
+  font-size: var(--fs);
+  cursor: pointer;
+}
+.chip span {
+  font-weight: 400;
+  margin-left: 0.4rem;
+}
+.chip[aria-pressed="true"] {
+  background: var(--sf);
+  color: var(--pri);
+  box-shadow: inset 0 0 0 2px var(--pri);
+}
+.claims {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.claim {
+  display: flex;
+  flex-direction: column;
+}
+.claim-src {
+  color: var(--tx2);
+}
+.claim-text {
+  font-size: var(--fs-mid);
+  line-height: 1.6;
+}
+.claim-family .claim-text,
+.family-words {
+  font-family: var(--serif);
+  font-weight: 400;
+}
+.grid-sec {
+  padding-top: 1.25rem;
+}
+.grid-head {
+  padding: 0 var(--gut) 0.75rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.grid-tight {
+  margin: 0 calc(var(--gut) * -1);
+}
+.tile {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--sf);
+  display: block;
+}
+.tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(30, 26, 23, 0.55);
+  color: #fff;
+  font-weight: 700;
+}
+/* 行き先の帯。残したい＝塗り、迷う＝明るい塗り、処分したい＝枠だけ */
+.lane {
+  display: inline-block;
+  padding: 0 0.5rem;
+  font-size: var(--fs);
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.tile .lane {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+.lane-keep {
+  background: var(--keep);
+  color: var(--on-keep);
+  border: 2px solid var(--keep);
+}
+.lane-unsure {
+  background: var(--unsure);
+  color: var(--on-unsure);
+  border: 2px solid var(--unsure);
+}
+.lane-drop {
+  background: var(--sf);
+  color: var(--drop);
+  border: 2px solid var(--drop);
+}
+/* 待ったの判子。円。茜はここと待ったのボタンだけ */
+.stamp {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 3.6rem;
+  height: 3.6rem;
+  border: 3px solid var(--akane);
+  border-radius: 50%;
+  background: var(--sf);
+  color: var(--akane);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs);
+  font-weight: 700;
+  white-space: nowrap;
+  transform: rotate(-12deg);
+}
+.rows {
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+}
+.row-link {
+  min-height: 3.5rem;
+  padding: 0.75rem var(--gut);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: var(--fs-mid);
+}
+.row-link .note {
+  font-weight: 400;
+}
+
+/* ---- 下のタブ ----
+   今いる画面：上の太い線＋主の色＋太字。ほかは薄い文字。撮るは画面ではなく操作なので丸い印 */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--sf);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: stretch;
+  text-align: center;
+}
+.tabbar a {
+  position: relative;
+  min-height: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 0.6rem;
+  gap: 0.15rem;
+  text-decoration: none;
+  color: var(--tx2);
+  font-size: var(--fs);
+  line-height: 1.2;
+}
+.tabbar a[aria-current="page"] {
+  color: var(--pri);
+  font-weight: 700;
+}
+.tabbar a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 18%;
+  right: 18%;
+  height: 4px;
+  background: var(--pri);
+}
+.tab-ic-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.tab-ic-wrap .badge {
+  position: absolute;
+  top: -0.6rem;
+  left: 1.6rem;
+}
+.tabbar .tab-shoot {
+  color: var(--tx);
+  font-weight: 700;
+}
+.shoot-ring {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--pri);
+  color: var(--on-pri);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.badge {
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--akane);
+  color: var(--on-akane);
+  font-size: var(--fs);
+  font-weight: 700;
+  line-height: 1.75rem;
+  text-align: center;
+}
+
+/* ---- 詳細 ---- */
+.photo {
+  position: relative;
+  background: #111;
+}
+.photo-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  position: relative;
+  cursor: pointer;
+}
+.photo-btn img {
+  display: block;
+  width: 100%;
+  height: min(75vw, 22rem);
+  object-fit: contain;
+}
+.photo-top {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+}
+.photo-top .back {
+  background: rgba(30, 26, 23, 0.7);
+  color: #fff;
+  padding: 0 0.75rem 0 0.5rem;
+  border-radius: var(--r);
+}
+.read-hint {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  background: rgba(30, 26, 23, 0.75);
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--r);
+}
+.read-layer {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 17, 15, 0.93);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  padding: 3.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  text-align: left;
+}
+.read-line {
+  font-size: var(--fs-mid);
+  line-height: 1.6;
+}
+.read-line small {
+  font-size: var(--fs);
+  margin-left: 0.5rem;
+  color: #d8cfc0;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.say {
+  font-family: var(--serif);
+  font-size: var(--fs-big);
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+.map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 358 / 300;
+}
+.map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-line {
+  stroke: var(--pri);
+  stroke-width: 2;
+}
+.node {
+  position: absolute;
+  width: 21.2%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--bg);
+  background: var(--sf);
+  display: block;
+}
+.node img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.node-center {
+  width: 28%;
+  border: 4px solid var(--pri);
+}
+.map-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: var(--bg);
+  color: var(--pri);
+  font-weight: 700;
+  padding: 0 0.25rem;
+  white-space: nowrap;
+}
+.rel-list {
+  display: flex;
+  flex-direction: column;
+}
+.rel-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+.rel-thumb-wrap {
+  position: relative;
+  flex: none;
+  display: block;
+}
+.rel-thumb-wrap .stamp {
+  width: 2.9rem;
+  height: 2.9rem;
+  right: -6px;
+  top: -6px;
+  border-width: 2px;
+}
+.rel-thumb {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: var(--r);
+  display: block;
+  flex: none;
+}
+.rel-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+  min-width: 0;
+}
+.rel-body b {
+  font-size: var(--fs-mid);
+  line-height: 1.5;
+}
+.rel-body .claim-claude {
+  color: var(--tx2);
+}
+.pile-pick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.pile-pick legend {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.pick {
+  min-height: 3rem;
+  border-radius: var(--r);
+  font-weight: 700;
+  font-size: var(--fs);
+  cursor: pointer;
+  background: var(--sf);
+  color: var(--tx);
+  border: 2px solid var(--line);
+}
+.pick-keep[aria-pressed="true"] {
+  background: var(--keep);
+  border-color: var(--keep);
+  color: var(--on-keep);
+}
+.pick-unsure[aria-pressed="true"] {
+  background: var(--unsure);
+  border-color: var(--unsure);
+  color: var(--on-unsure);
+}
+.pick-drop[aria-pressed="true"] {
+  border: 3px solid var(--drop);
+  color: var(--drop);
+}
+.waits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.waits li {
+  display: flex;
+  flex-direction: column;
+}
+.family-words {
+  font-size: var(--fs-mid);
+  font-weight: 400;
+  line-height: 1.6;
+}
+.foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: var(--sf);
+  border-top: 1px solid var(--line);
+  padding: 0.75rem var(--gut) calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.foot > * {
+  max-width: 38rem;
+  width: 100%;
+  margin: 0 auto;
+}
+.note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.btn-wait {
+  min-height: 3.75rem;
+  width: 100%;
+  background: var(--akane);
+  border-color: var(--akane);
+  color: var(--on-akane);
+}
+.btn-wait.is-on {
+  background: var(--sf);
+  color: var(--akane);
+}
+.stamp-mini {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid var(--akane);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs);
+}
+
+/* ---- 撮る ---- */
+.cam {
+  background: #111;
+  color: #fff;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.view {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+.view video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cam-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  color: var(--cam-tx);
+}
+.dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  animation: flash 0.22s ease-out;
+}
+@keyframes flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.cam-top {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pill {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border-radius: var(--r);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pill-select {
+  flex: 1;
+  min-width: 0;
+  font-weight: 400;
+}
+.pill-select select {
+  min-height: 2.75rem;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  padding: 0;
+  font-size: var(--fs);
+  min-width: 0;
+  flex: 1;
+}
+.pill-select option {
+  color: #000;
+}
+.cam-note {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: calc(4.25rem + env(safe-area-inset-top, 0px));
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--r);
+  color: var(--cam-tx);
+}
+.float {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 11rem;
+  height: 11rem;
+  margin: -5.5rem 0 0 -5.5rem;
+  border: 5px solid #fff;
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+.float img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 浮く：ばねの動きを linear() で */
+.float.in {
+  animation: pop 0.5s
+    linear(0, 0.275, 0.791, 1.183, 1.309, 1.225, 1.065, 0.944, 0.904, 0.93, 0.98, 1.017, 1.03, 1.022, 1.006, 0.995, 0.991, 0.993, 0.998, 1.002, 1.003, 1.002, 1.001, 0.999, 1)
+    both;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.3);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+/* 吸い込まれる */
+.float.go {
+  opacity: 0.3;
+  transition:
+    transform 0.38s cubic-bezier(0.5, 0, 0.8, 0.4),
+    opacity 0.38s;
+  animation: suck 0.38s cubic-bezier(0.5, 0, 0.8, 0.4) both;
+}
+@keyframes suck {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+}
+.undo {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  background: var(--sf);
+  color: var(--tx);
+  border-radius: var(--r);
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  animation: rise 0.25s ease-out;
+}
+.undo button {
+  flex: none;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border: 2px solid var(--pri);
+  background: var(--sf);
+  color: var(--pri);
+  font-weight: 700;
+  border-radius: var(--r);
+  cursor: pointer;
+}
+@keyframes rise {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+}
+.dock {
+  flex: none;
+  min-height: 12.5rem;
+  background: var(--cam);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem var(--gut) calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+.dock-hint {
+  text-align: center;
+  color: var(--cam-tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 4rem 1fr 4rem;
+  align-items: center;
+}
+.last {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--r);
+  border: 2px solid #fff;
+  overflow: hidden;
+  background: #3a332d;
+}
+.last img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shutter {
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+  justify-self: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: #fff;
+  border: 6px solid var(--cam);
+  outline: 4px solid #fff;
+  cursor: pointer;
+}
+.shutter:active {
+  transform: scale(0.92);
+}
+.count {
+  text-align: center;
+  color: var(--cam-tx);
+}
+.count b {
+  display: block;
+  font-size: var(--fs-big);
+  color: #fff;
+  line-height: 1.1;
+}
+.three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.three button {
+  min-height: 4.5rem;
+  border-radius: var(--r);
+  font-weight: 700;
+  font-size: var(--fs-mid);
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0 0.25rem;
+}
+.three button:active {
+  transform: scale(0.95);
+}
+/* 撮る画面は暗い地なので、昼の配色の値で固定する */
+.three-keep {
+  background: #1f5fa8;
+  color: #fff;
+  border: 2px solid #1f5fa8;
+}
+.three-unsure {
+  background: #e0a526;
+  color: #2b2118;
+  border: 2px solid #e0a526;
+}
+.three-drop {
+  background: var(--cam);
+  color: #fff;
+  border: 2px solid #fff;
+}
+.retake {
+  align-self: center;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--cam-tx);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- 仕分け先、確認、人 ---- */
+.illus {
+  background: var(--sf);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 1.5rem var(--gut);
+  display: flex;
+  justify-content: center;
+  color: var(--tx);
+}
+.illus-svg {
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+}
+.illus-keep {
+  fill: var(--keep);
+}
+.illus-unsure {
+  fill: var(--unsure);
+}
+.illus-drop {
+  fill: none;
+  stroke: var(--drop);
+  stroke-width: 3;
+}
+.illus-text {
+  fill: currentColor;
+  font-size: 16px;
+  font-weight: 700;
+}
+.place-list {
+  border-top: 1px solid var(--line);
+}
+.place-row {
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem var(--gut);
+  border-bottom: 1px solid var(--line);
+}
+.place-row b {
+  font-size: var(--fs-mid);
+  flex: 1;
+}
+.sq {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+.sq-keep {
+  background: var(--keep);
+}
+.sq-unsure {
+  background: var(--unsure);
+}
+.sq-drop {
+  border: 2px solid var(--drop);
+}
+.add {
+  margin: 1rem var(--gut);
+  width: calc(100% - 2 * var(--gut));
+  min-height: 3.5rem;
+  border: 2px dashed var(--pri);
+  border-radius: var(--r);
+  background: none;
+  color: var(--pri);
+  font-weight: 700;
+  font-size: var(--fs-mid);
+  cursor: pointer;
+}
+.warn {
+  border-top: 3px solid var(--akane);
+  background: var(--sf);
+  margin-top: 0.5rem;
+}
+.warn-title {
+  color: var(--akane);
+}
+.check-list {
+  display: flex;
+  flex-direction: column;
+}
+.check-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.check-box {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 400;
+  min-width: 3rem;
+}
+.check-box input {
+  width: 2rem;
+  height: 2rem;
+  min-height: 0;
+  accent-color: var(--pri);
+}
+.plain-list {
+  display: flex;
+  flex-direction: column;
+}
+.plain-row {
+  min-height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0;
+}
+.plain-row > span:first-child {
+  display: flex;
+  flex-direction: column;
+}
+.plain-row b {
+  font-size: var(--fs-mid);
+}
+.person {
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.person-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+.person-head b {
+  font-size: var(--fs-mid);
+}
+
+/* ---- 知らせ ---- */
+.toast {
+  position: fixed;
+  left: var(--gut);
+  right: var(--gut);
+  bottom: 6rem;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.toast span {
+  background: var(--tx);
+  color: var(--bg);
+  padding: 0.6rem 1rem;
+  border-radius: var(--r);
+  max-width: 30rem;
+}
+
+/* ---- 動き。待ったを押した瞬間だけ弾む ---- */
+.pop {
+  animation: pop 0.5s
+    linear(0, 0.275, 0.791, 1.183, 1.309, 1.225, 1.065, 0.944, 0.904, 0.93, 0.98, 1.017, 1.03, 1.022, 1.006, 0.995, 0.991, 0.993, 0.998, 1.002, 1.003, 1.002, 1.001, 0.999, 1);
+}
+.btn-wait.pop {
+  animation-name: popsmall;
+}
+@keyframes popsmall {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ---- 気づき（背景の見落とし）。作業を止めないよう控えめに ---- */
+/* 写真ごと：格子の写真の左上に小さな札。文は詳細と読み上げに */
+.tile-notice {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 0 0.375rem;
+  font-family: var(--serif);
+  font-size: var(--fs);
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--pri);
+  background: var(--sf);
+  border-radius: 8px;
+}
+/* 写真をまたぐ：閉じた折りたたみ。開くと文と関わる物 */
+.box-notices {
+  margin-top: 0.5rem;
+}
+.box-notices summary {
+  color: var(--pri);
+}
+.box-notice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.box-notice {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--line);
+}
+.notice-say {
+  font-family: var(--serif);
+  font-size: var(--fs);
+  line-height: 1.7;
+  margin: 0 0 0.5rem;
+}
+.notice-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+.notice-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  color: var(--pri);
+  font-size: var(--fs);
+}
+.thumb-mini {
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: cover;
+  border-radius: 8px;
+}
+/* 詳細：見つけたことの下に 1 行 */
+.item-notice {
+  margin-top: 0.75rem;
+  font-family: var(--serif);
+  font-size: var(--fs);
+  line-height: 1.7;
+  color: var(--tx);
+}
+.item-notice-label {
+  font-weight: 700;
+  color: var(--pri);
+  margin-right: 0.5rem;
+}
+
+/* 見えないが、読み上げとラベルからは届く */
+.vh {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+}
+
+/* ---- つながりの一覧。点数の多い順。数字と帯で多さを見せる ---- */
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.link-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+  padding: 0.75rem 0;
+  min-height: 2.75rem;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--tx);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.link-name b {
+  font-size: var(--fs-mid);
+}
+.link-kind,
+.person-kind {
+  margin-left: 0.6rem;
+  color: var(--tx2);
+  font-size: var(--fs);
+}
+.link-count {
+  color: var(--tx2);
+}
+.link-count b {
+  font-size: var(--fs-big);
+  color: var(--tx);
+  margin-right: 0.1rem;
+}
+.link-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: var(--line);
+}
+.link-bar span {
+  display: block;
+  height: 100%;
+  background: var(--pri);
+}
+.link-row[aria-pressed="true"] {
+  background: var(--pri);
+  color: var(--on-pri);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.link-row[aria-pressed="true"] .link-kind,
+.link-row[aria-pressed="true"] .link-count,
+.link-row[aria-pressed="true"] .link-count b {
+  color: var(--on-pri);
+}
+.link-row[aria-pressed="true"] .link-bar {
+  background: color-mix(in srgb, var(--on-pri) 35%, transparent);
+}
+.link-row[aria-pressed="true"] .link-bar span {
+  background: var(--on-pri);
+}
+
+/* ---- 人カード。1人1枚。名前を大きく、根拠は出どころの注記＋本文 ---- */
+.person {
+  background: var(--sf);
+  border-top: 0;
+  padding: 1.25rem var(--gut);
+  margin: 0 calc(-1 * var(--gut)) 0.75rem;
+}
+.person-head b {
+  font-size: var(--fs-big);
+}
+.person .claim-text {
+  font-weight: 400;
+}
+.person .claim-src {
+  font-size: var(--fs);
+}
+.btn-quiet {
+  background: transparent;
+}
+
+/* ---- 点検（11/08）の直し ---- */
+/* 暗い撮る画面では、フォーカスの枠を白に（#2f5d62 は #111 に対して 3:1 に届かない） */
+.screen.cam :focus-visible {
+  outline-color: #fff;
+}
+.shutter:focus-visible {
+  outline: 4px solid #fff;
+  box-shadow: 0 0 0 8px var(--pri);
+}
+/* PC では、下のタブの中身を本文の列にそろえる（帯は全幅のまま） */
+@media (min-width: 48rem) {
+  .tabbar {
+    padding-left: calc((100vw - 40rem) / 2);
+    padding-right: calc((100vw - 40rem) / 2);
+  }
+}
+/* 文字を大きくしても、撮る画面の上の段が重ならない */
+.cam-top {
+  flex-wrap: wrap;
+}
+/* 詳細の待った：待ったと「取り消す」「元に戻す」を横に並べる。オンのときも塗りのまま */
+.wait-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wait-row .btn-wait {
+  flex: 1;
+}
+.btn-wait.is-held .stamp-mini {
+  border-color: currentColor;
+}
+/* 読めた文字の重ねは、押すと写真に戻る */
+.read-layer {
+  cursor: pointer;
+}
+/* 画面が変わったときにフォーカスを当てた見出しには、枠を出さない */
+h1[tabindex="-1"]:focus,
+h1[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+.loading {
+  min-height: 1.5em;
+}
+.btn:disabled {
+  cursor: progress;
+}
+
+/* 下に帯（待った）がある画面では、知らせを帯の上に出す */
+body:has(.with-foot) .toast {
+  bottom: calc(11rem + env(safe-area-inset-bottom, 0px));
+}
+/* 折りたたみは、開ける印を付けて見出しと区別する。文字は本文の大きさ、主の色 */
+.fold summary {
+  list-style: none;
+  gap: 0.6rem;
+  font-size: var(--fs);
+  color: var(--pri);
+}
+.fold summary::-webkit-details-marker {
+  display: none;
+}
+.fold summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 0.5rem solid currentColor;
+  border-top: 0.35rem solid transparent;
+  border-bottom: 0.35rem solid transparent;
+  transition: transform 0.15s ease-out;
+}
+.fold[open] > summary::before {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fold summary::before {
+    transition: none;
+  }
+}
+.say {
+  text-wrap: pretty;
+}
