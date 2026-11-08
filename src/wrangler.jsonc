@@ -5,6 +5,8 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "dev": { "port": 8791 },
+  // 公開版の守り。全体で 1 日に読む写真の数（1 枚およそ $0.07）。止めるときは READING_OFF を "1" に
+  "vars": { "TOTAL_DAILY": "50" },
   // 期限切れの見本を消す。1 時間ごと。手元の wrangler dev では cron は動かないので、画面を開いたときにも動く
   "triggers": { "crons": ["0 * * * *"] },
   "assets": {

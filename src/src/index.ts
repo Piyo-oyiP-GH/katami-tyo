@@ -4,6 +4,7 @@ import { processItem, updateBoxNotices, updatePersons } from "./ai";
 import { maintain } from "./maintain";
 import { projectRoutes } from "./routes/project";
 import { AppEnv, loadSession, sessionRoutes } from "./routes/session";
+import { getAccess, postAccess, requireAccess } from "./access";
 import type { JobOutcome, ReadItemJob, UpdatePersonsJob } from "./types";
 import { readingOff } from "./usage";
 
@@ -18,6 +19,10 @@ app.use("/api/*", async (c, next) => {
   if (!c.res.headers.get("Cache-Control")) c.res.headers.set("Cache-Control", "no-store");
   c.res.headers.set("X-Content-Type-Options", "nosniff");
 });
+// 公開版の合言葉。通っていなければ、ここから先の API は 401
+app.get("/api/access", getAccess);
+app.post("/api/access", postAccess);
+app.use("/api/*", requireAccess);
 app.use("/api/*", loadSession);
 app.route("/api", sessionRoutes);
 app.route("/api/p/:pid", projectRoutes);
