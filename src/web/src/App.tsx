@@ -35,7 +35,7 @@ function rememberSample(pid: string) {
 
 export function Denied({ text }: { text: string }) {
   useEffect(() => {
-    document.title = "開けません｜YukariNote";
+    document.title = "開けません｜かたみ帳";
   }, []);
   return (
     <main className="page entry">
@@ -121,7 +121,7 @@ function ProjectGate({ pid, screen, iid, query }: { pid: string; screen: string;
   }, [project, pid]);
   // 既定の題名。画面ごとの題名（useScreenTitle）は、このあとに子の effect で上書きされる
   useLayoutEffect(() => {
-    if (project) document.title = `${project.title}｜YukariNote`;
+    if (project) document.title = `${project.title}｜かたみ帳`;
   }, [project, pid, screen, iid]);
 
   if (failed === "denied") return <Denied text="参加者だけが開けます。招待のリンクを開いてください。" />;

@@ -21,7 +21,7 @@ export function Entry() {
   const [title, setTitle] = useState("");
 
   useEffect(() => {
-    document.title = "YukariNote";
+    document.title = "かたみ帳";
     setFailed(false);
     api<MeX>("/api/me").then(setMe, () => setFailed(true));
   }, [nonce]);
@@ -46,7 +46,7 @@ export function Entry() {
   return (
     <main className="page entry">
       <header className="entry-head">
-        <h1 className="h-big">YukariNote</h1>
+        <h1 className="h-big">かたみ帳</h1>
         <p>家財を撮ると、Claude が文字や物を読み、物どうしのつながりを示します。離れた親族も、捨てる前に「待った」をかけられます。</p>
       </header>
 

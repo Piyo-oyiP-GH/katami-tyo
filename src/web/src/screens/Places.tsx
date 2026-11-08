@@ -48,7 +48,7 @@ export function Places({ ctx, back }: { ctx: ProjectCtx; back?: string | null })
       <header className="head">
         <BackLink href={back === "capture" ? `#/p/${pid}/capture` : `#/p/${pid}`}>{back === "capture" ? "撮る" : "つながり"}</BackLink>
         <h1 className="h-big" ref={titleRef} tabIndex={-1}>仕分け先</h1>
-        <p className="sub">使わなくても、YukariNote は使えます</p>
+        <p className="sub">使わなくても、かたみ帳 は使えます</p>
       </header>
       <div className="illus">
         <Illustration />

@@ -1,4 +1,4 @@
-# React 版の画面（YukariNote、仮の名前）
+# React 版の画面（かたみ帳）
 
 今の画面（`../public` の素の HTML）を消さずに、別の場所で作り直した画面です。API とデータ（`../src` の Hono、D1、R2、Queues）は変えていません。今の API（`../CONTRACT.md`、`../src/routes/`）だけを使います。
 

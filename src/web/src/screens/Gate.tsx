@@ -24,7 +24,7 @@ export function Gate({ children }: { children: ReactNode }) {
   if (state === "offline")
     return (
       <main className="page entry">
-        <h1 className="h-big">YukariNote</h1>
+        <h1 className="h-big">かたみ帳</h1>
         <p>つながりませんでした。</p>
         <button className="btn btn-primary wide" onClick={() => (setState("checking"), check())}>
           もう一度読み込む
@@ -35,7 +35,7 @@ export function Gate({ children }: { children: ReactNode }) {
   return (
     <main className="page entry">
       <header className="entry-head">
-        <h1 className="h-big">YukariNote</h1>
+        <h1 className="h-big">かたみ帳</h1>
         <p>この版は、審査と試用のために合言葉で入る形にしています。</p>
       </header>
       <form
